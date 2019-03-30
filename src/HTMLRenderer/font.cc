@@ -1077,12 +1077,13 @@ void HTMLRenderer::export_remote_default_font(long long fn_id)
 void HTMLRenderer::export_local_font(const FontInfo & info, GfxFont * font, const string & original_font_name, const string & cssfont) 
 {
     f_css.fs << "." << CSS::FONT_FAMILY_CN << info.id << "{";
-    f_css.fs << "font-family:" << ((cssfont == "") ? (original_font_name + "," + general_font_family(font)) : cssfont) << ";";
+    f_css.fs << "font-family:" << ((cssfont == "") ? (original_font_name) : cssfont) + "," + general_font_family(font) << ";";
 
     string fn = original_font_name;
     for(auto & c : fn)
         c = tolower(c);
 
+    printf("Font %s isBold: %d isItalic: %d", fn, font->isBold(), font->isItalic());
     if(font->isBold() || (fn.find("bold") != string::npos))
         f_css.fs << "font-weight:bold;";
     else
