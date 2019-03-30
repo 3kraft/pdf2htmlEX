@@ -832,7 +832,6 @@ void HTMLRenderer::embed_font(const string & filepath, GfxFont * font, FontInfo 
 
 const FontInfo * HTMLRenderer::install_font(GfxFont * font)
 {
-    printf("install_font");
     assert(sizeof(long long) == 2*sizeof(int));
                 
     long long fn_id = (font == nullptr) ? 0 : hash_ref(font->getID());
@@ -908,14 +907,12 @@ const FontInfo * HTMLRenderer::install_font(GfxFont * font)
         switch(font_loc -> locType)
         {
             case gfxFontLocEmbedded:
-                printf("gfxFontLocEmbedded");
                 install_embedded_font(font, new_font_info);
                 break;
             case gfxFontLocResident:
                 std::cerr << "Warning: Base 14 fonts should not be specially handled now. Please report a bug!" << std::endl;
                 /* fall through */
             case gfxFontLocExternal:
-                printf("gfxFontLocExternal");
                 install_external_font(font, new_font_info);
                 break;
             default:
@@ -994,6 +991,16 @@ void HTMLRenderer::install_external_font(GfxFont * font, FontInfo & info)
     export_local_font(info, font, fontname, "");
 }
 
+static string general_font_family(GfxFont * font)
+{
+    if(font->isFixedWidth())
+        return "monospace";
+    else if (font->isSerif())
+        return "serif";
+    else
+        return "sans-serif";
+}
+
 void HTMLRenderer::export_remote_font(const FontInfo & info, const string & format, GfxFont * font)
 {
     string css_font_format;
@@ -1047,28 +1054,45 @@ void HTMLRenderer::export_remote_font(const FontInfo & info, const string & form
             f_css.fs << (char*)fn;
         }
     }
-
+    cerr << "Pre CSS generation" << endl;
     f_css.fs << ")"
              << "format(\"" << css_font_format << "\");"
              << "}" // end of @font-face
              << "." << CSS::FONT_FAMILY_CN << info.id << "{"
-             << "font-family:" << CSS::FONT_FAMILY_CN << info.id << ";"
-             << "line-height:" << round(info.ascent - info.descent) << ";"
-             << "font-style:normal;"
-             << "font-weight:normal;"
-             << "visibility:visible;"
+             << "font-family:" << CSS::FONT_FAMILY_CN << info.id << "," << general_font_family(font) << ";" 
+             << "line-height:" << round(info.ascent - info.descent) << ";";
+
+    cerr << "Post CSS generation" << endl;
+
+    if (font != nullptr) {
+      cerr << "Font is not null for" << info.id << endl;
+      
+      string fontname;
+      if (font->getName() != nullptr) {
+        fontname = string(font->getName()->getCString());
+      }
+      
+      cerr << "Font name is " << fontname << endl;
+      if(font->isBold() || (!fontname.empty() && fontname.find("bold") != string::npos))
+          f_css.fs << "font-weight:bold;";
+      else
+          f_css.fs << "font-weight:normal;";
+
+      if(fontname.find("oblique") != string::npos)
+          f_css.fs << "font-style:oblique;";
+      else if(font->isItalic() || (!fontname.empty() && fontname.find("italic") != string::npos))
+          f_css.fs << "font-style:italic;";
+      else
+          f_css.fs << "font-style:normal;";
+    } else {
+      cerr <<  "Font is null for " << info.id << endl;
+      f_css.fs << "font-weight:normal;";
+      f_css.fs << "font-style:normal;";      
+    }
+
+    f_css.fs << "visibility:visible;"
              << "}" 
              << endl;
-}
-
-static string general_font_family(GfxFont * font)
-{
-    if(font->isFixedWidth())
-        return "monospace";
-    else if (font->isSerif())
-        return "serif";
-    else
-        return "sans-serif";
 }
 
 // TODO: this function is called when some font is unable to process, may use the name there as a hint
@@ -1086,7 +1110,6 @@ void HTMLRenderer::export_local_font(const FontInfo & info, GfxFont * font, cons
     for(auto & c : fn)
         c = tolower(c);
 
-    printf("Font %s isBold: %d isItalic: %d", fn, font->isBold(), font->isItalic());
     if(font->isBold() || (fn.find("bold") != string::npos))
         f_css.fs << "font-weight:bold;";
     else
