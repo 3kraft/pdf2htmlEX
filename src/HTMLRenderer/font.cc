@@ -832,6 +832,7 @@ void HTMLRenderer::embed_font(const string & filepath, GfxFont * font, FontInfo 
 
 const FontInfo * HTMLRenderer::install_font(GfxFont * font)
 {
+    printf("install_font");
     assert(sizeof(long long) == 2*sizeof(int));
                 
     long long fn_id = (font == nullptr) ? 0 : hash_ref(font->getID());
@@ -907,12 +908,14 @@ const FontInfo * HTMLRenderer::install_font(GfxFont * font)
         switch(font_loc -> locType)
         {
             case gfxFontLocEmbedded:
+                printf("gfxFontLocEmbedded");
                 install_embedded_font(font, new_font_info);
                 break;
             case gfxFontLocResident:
                 std::cerr << "Warning: Base 14 fonts should not be specially handled now. Please report a bug!" << std::endl;
                 /* fall through */
             case gfxFontLocExternal:
+                printf("gfxFontLocExternal");
                 install_external_font(font, new_font_info);
                 break;
             default:
