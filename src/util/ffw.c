@@ -64,6 +64,7 @@ static void dumb_logwarning(const char * format, ...) { }
 
 static void dumb_post_error(const char * title, const char * error, ...) { }
 
+
 void ffw_init(int debug)
 {
     InitSimpleStuff();
